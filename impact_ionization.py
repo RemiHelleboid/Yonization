@@ -17,7 +17,7 @@ def compute_gamma_temperature_dependence(temperature):
     return gamma
 
 
-def impact_ionization_rate_electron_van_overstraten_silicon(F_ava, gamma_temperature_dependence):
+def impact_ionization_rate_electron_van_overstraten_silicon(F_ava, gamma_temperature_dependence = 1.0):
     E_threshold = 0.0
     if (F_ava <= E_threshold):
         return 0.0
@@ -27,7 +27,8 @@ def impact_ionization_rate_electron_van_overstraten_silicon(F_ava, gamma_tempera
         imapact_ionization_e = gamma_temperature_dependence * a_e * exp(-gamma_temperature_dependence * b_e / F_ava)
         return imapact_ionization_e
 
-def impact_ionization_rate_hole_van_overstraten_silicon(F_ava, gamma_temperature_dependence):
+
+def impact_ionization_rate_hole_van_overstraten_silicon(F_ava, gamma_temperature_dependence = 1.0):
     E_threshold = 0.0
     E_0 = 4.0e5
     if (F_ava <= E_threshold):
