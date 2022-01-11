@@ -1,24 +1,62 @@
-# Electric field profile functions for tests.
+include("electric_fields.jl")
+module ImpactIonizations
+export αₑ, αₕ 
 
+using ..ElectricFields
 
-function electric_field_raw_at_position(x_position::Float64, boost_factor::Float64=1.2)::Float64
-    low_field::Float64 = 1.0e4
-    electric_field::Float64 = 0.0
-    if x_position <= 1.0e-4
-        electric_field = low_field
-    elseif x_position > 1.0e-4 && x_position <= 1.36e-4
-        electric_field = 1624982.38 * x_position * 1e4 - 1614982.38
-    elseif  x_position > 1.36e-4 && x_position <= 1.49e-4
-        electric_field = -4656341.3 * x_position * 1e4 + 6946969.7
+function αₑ(electric_field::Float64)
+    a_e::Float64 = 7.03e5
+    b_e::Float64 = 1.231e6
+    imapact_ionization_e::Float64 = a_e * exp(-b_e / electric_field)
+    return imapact_ionization_e
+end
+
+function αₕ(electric_field::Float64)
+    E_threshold::Float64 = 0.0
+    E_0::Float64 = 4.0e5
+    if (electric_field <= E_threshold)
+        return 0.0
+    elseif (electric_field <= E_0)
+        a_h::Float64 = 1.582e6
+        b_h::Float64 = 2.036e6
+        imapact_ionization_h::Float64 = a_h * exp(-b_h / electric_field)
+        return imapact_ionization_h
     else
-        electric_field = low_field
+        a_h = 6.71e5
+        b_h = 1.693e6
+        imapact_ionization_h = a_h * exp(-b_h / electric_field)
+    return imapact_ionization_h
     end
-    return boost_factor * electric_field
 end
 
+using Plots
+using LaTeXStrings
 
-function electric_field_profile(x_min::Float64, x_max::Float64, number_points::Int64)::Tuple{Vector{Float64},Vector{Float64}}
-    x_line = collect(LinRange(x_min, x_max, number_points))
-    electric_field_profile::Vector{Float64} = map(electric_field_raw_at_position, x_line)
-    return x_line, electric_field_profile
+
+function plot_ionization_coefficients(x_min::Float64, x_max::Float64, number_points::Int64)
+    x_line, electric_filed_line = ElectricFields.electric_field_profile(x_min, x_max, number_points)
+    line_αₑ = map(αₑ, electric_filed_line)
+    line_αₕ = map(αₕ, electric_filed_line)
+    # plotlyjs()
+    plot_ef = plot(x_line, electric_filed_line, show = true, 
+                    fontfamily = "computer modern",
+                     title= "Ionization coefficients Profile",
+                     label= "Electric Field",
+                     xlabel = L"\textrm{Depth\;\;} (u.a.)",
+                     ylabel = L"\textrm{Ionization\; coefficient\;\;} (cm^{-1})",
+                     xformatter = :scientific,
+                     dpi=600)
+    plot!(x_line, line_αₑ, show=true, label= "Electron")
+    plot!(x_line, line_αₕ, show=true, label= "Hole")
+    savefig(plot_ef, "plot_ionization_coef_profile.png")
+    savefig(plot_ef, "plot_ionization_coef_profile.svg")
+    savefig(plot_ef, "plot_ionization_coef_profile.pdf")
 end
+
+end # End of ImpactIonizations module
+
+using .ImpactIonizations
+
+ if abspath(PROGRAM_FILE) == @__FILE__
+    ImpactIonizations.plot_ionization_coefficients(0.0, 3e-4, 1000)
+ end
