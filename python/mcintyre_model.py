@@ -8,11 +8,15 @@ import impact_ionization
 import electric_field_profile
 
 
+boost_alpha = 1.0
+
+
 def dPe_dx(x, PePh, temperature=300):
     Pe = PePh[0]
     Ph = PePh[1]
-    electric_field = [
-        electric_field_profile.function_electric_field(x_pos) for x_pos in x]
+    electric_field = np.array([
+        electric_field_profile.function_electric_field(x_pos) for x_pos in x])
+    electric_field *= boost_alpha
     # print(x, electric_field)
     gamma_temperature = impact_ionization.compute_gamma_temperature_dependence(
         temperature)
@@ -32,6 +36,7 @@ def dPe_dx(x, PePh, temperature=300):
 def BoundaryCondition(ya, yb):
     return(np.array([ya[0], yb[-1]]))
 
+
 def function_initial_guess(x_line_efield, x_max_ef):
     initial_guess_e = np.zeros_like(x_line_efield)
     initial_guess_h = np.zeros_like(x_line_efield)
@@ -41,6 +46,7 @@ def function_initial_guess(x_line_efield, x_max_ef):
         else:
             initial_guess_h[k] = 0.2
     return np.vstack((initial_guess_e, initial_guess_h))
+
 
 def solve_mcintyre(x_line_electric_field, y_line_electric_field, tolerance):
     # initial_guess = np.zeros((2, x_line_electric_field.size)) + 1.1
@@ -55,21 +61,28 @@ def solve_mcintyre(x_line_electric_field, y_line_electric_field, tolerance):
     # plt.legend()
     # plt.show()
     solution = solve_bvp(dPe_dx, BoundaryCondition,
-                         x_line_electric_field, initial_guess, max_nodes=10000, tol=tolerance)
+                         x_line_electric_field, initial_guess, max_nodes=10*len(x_line_electric_field), tol=tolerance, verbose=2)
     return solution
 
 
 if __name__ == "__main__":
-    mesh_line = np.linspace(0.0, 1.8e-4, 2000)
-    electric_field = [
-        electric_field_profile.function_electric_field(x) for x in mesh_line]
-    sol = solve_mcintyre(mesh_line, electric_field_profile.function_electric_field)
-    # x_plot = mesh_line
-    # y1_plot = sol.sol(x_plot)[0]
-    # y2_plot = sol.sol(x_plot)[1]
-    # plt.plot(x_plot, y1_plot, "-", c="b", label="Electron")
-    # plt.plot(x_plot, y2_plot, "--", c="r",  label="Holes")
-    # plt.xlabel("x")
-    # plt.ylabel("y")
-    # plt.legend()
-    # plt.show()
+    mesh_line = np.linspace(0.0, 1.8e-4, 1000)
+    electric_field = np.array(
+        [electric_field_profile.function_electric_field(x) for x in mesh_line])
+    boost_ef = 0.93229
+    electric_field = boost_ef * electric_field
+    tolerance = 1e-12
+    sol = solve_mcintyre(mesh_line, electric_field, tolerance)
+    x_plot = mesh_line
+    y1_plot = sol.sol(x_plot)[0]
+    y2_plot = sol.sol(x_plot)[1]
+
+    fig, axs = plt.subplots(1, figsize=(8, 8))
+    axs.plot(x_plot, y1_plot, "-", c="b", label="Electron")
+    axs.plot(x_plot, y2_plot, "--", c="r",  label="Holes")
+    axs.ticklabel_format(style="scientific", axis="x")
+    axs.ticklabel_format(axis='x', style='sci', scilimits=(0, 2))
+    axs.set_xlabel("X (a.u.)")
+    axs.set_ylabel("Breakdown Probability")
+    axs.legend()
+    plt.show()

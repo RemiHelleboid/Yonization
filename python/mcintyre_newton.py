@@ -115,7 +115,7 @@ def compute_newton_solution(list_x, list_electric_field, GuessbreakdownProbabili
         norm_residu = np.linalg.norm(W)
         breakdownProbability = breakdownProbability + lambda_newton * W
         epoch += 1
-        # print(f"Current residu norm = {norm_residu}")
+        print(f"Epoch : {epoch}  --->  Current residu norm = {norm_residu}")
     # print(f"Final error : {norm_residu}")
     return breakdownProbability
 
@@ -133,9 +133,11 @@ def brp_new_ton_to_eh_brp(breakdown_probability_newton):
 
 
 if __name__ == "__main__":
-    tolerance = 1e-8
+    tolerance = 1e-12
     mesh_line = np.linspace(0.0, 1.8e-4, 1000)
-    electric_field = [electric_field_profile.function_electric_field(x) for x in mesh_line]
+    electric_field = np.array([electric_field_profile.function_electric_field(x) for x in mesh_line])
+    boost_ef = 0.93229
+    electric_field = boost_ef * electric_field
     x_max_ef = mesh_line[np.argmax(electric_field)]
     initial_guess = np.zeros(2 * len(mesh_line))
     init_initial_guess = mcintyre_model.function_initial_guess(mesh_line, x_max_ef)
@@ -146,6 +148,10 @@ if __name__ == "__main__":
     matrix_A_plain = matrix_A.toarray()
     brp_newton = compute_newton_solution(mesh_line, electric_field, initial_guess, tolerance)
     eBreakdownProbability, hBreakdownProbability = brp_new_ton_to_eh_brp(brp_newton)
+    total_breakdown_probability = eBreakdownProbability + hBreakdownProbability - eBreakdownProbability * hBreakdownProbability
     plt.plot(mesh_line, eBreakdownProbability, "-", c="b", label="Electron")
     plt.plot(mesh_line, hBreakdownProbability, "--", c="r",  label="Holes")
+    plt.plot(mesh_line, total_breakdown_probability, "-", c="g",  label="Total")
+    plt.title(f"Max total BrP : {np.max(total_breakdown_probability)}")
+    plt.legend()
     plt.show()

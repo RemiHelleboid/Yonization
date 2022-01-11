@@ -21,7 +21,7 @@ def compute_multiplication(x_line, electric_field, tolerance, boost=1.0, plot=Fa
     list_difference= []
     max_multiplication = 0
     if plot:
-        fig, axs = plt.subplots(2, figsize=(10, 6))
+        fig, axs = plt.subplots(3, figsize=(10, 12))
     while difference >= tolerance and epoch <= MaxEpoch and max_multiplication<1e10:
         for idx_pt in range(len(mesh_line)):
             multiplication_x = 1.0 + np.trapz(multiplication_line[:idx_pt:] * alpha_line[:idx_pt:], x_line[:idx_pt:]) + np.trapz(multiplication_line[idx_pt::] * beta_line[idx_pt::], x_line[idx_pt::])
@@ -33,19 +33,25 @@ def compute_multiplication(x_line, electric_field, tolerance, boost=1.0, plot=Fa
         max_multiplication = np.max(multiplication_line)
         list_max_multiplication.append(max_multiplication)
         list_difference.append(difference)
+        second_derivative_max_mult = np.diff(list_difference, n=2)
 
-        if (epoch%5 == 0) and plot:
-            print(f"Epoch n° {epoch}  ---->   difference = {difference:2e}  with a maximum of {max_multiplication:2e} ")
+        if (epoch%2 == 0 and epoch > 20) and plot:
+            print(f"\rEpoch n° {epoch}  ---->   difference = {difference:2e}  with a maximum of {max_multiplication:2e} ", end="", flush=True)
             axs[0].plot(x_line, multiplication_line)
             axs[0].set_title(f"Multiplication convergence over {epoch} epochs with a maximum of {max_multiplication:2e} !")
             axs[1].plot(list_max_multiplication)
+            axs[2].plot(list_difference[5:])
             # axs[1].set_yscale("log")
             # axs[1].set_xscale("log")
             axs[1].set_ylabel("Maximum of the multiplication")
-            axs[1].set_xlabel("Itteration")
+            axs[1].set_xlabel("Iteration")
             # plt.legend()
+            axs[2].set_title(f"Maximum of the second derivative : {np.max(list_difference[5:])}")
+            fig.tight_layout()
             plt.pause(0.0001)
             axs[1].clear()
+            axs[2].clear()
+
     if plot:
         plt.show()
     return max_multiplication, difference
@@ -71,8 +77,8 @@ def boost_critical_find(x_line, electric_field, tolerance):
     plt.show()
 
 if __name__ == "__main__":
-    mesh_line = np.linspace(0.0, 1.8e-4, 120)
+    mesh_line = np.linspace(0.0, 1.8e-4, 1000)
     electric_field = [electric_field_profile.function_electric_field(x) for x in mesh_line]
 
-    compute_multiplication(mesh_line, electric_field, 1e-4, 0.965, True)
+    compute_multiplication(mesh_line, electric_field, 1e-4, 0.937, True)
     # boost_critical_find(mesh_line, electric_field, 1e-4)
