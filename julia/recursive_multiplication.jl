@@ -24,7 +24,6 @@ function compute_recursive_multiplication(x_line::Vector{Float64}, electric_fiel
     p1 = plot()
     while difference >= tolerance && epoch <= max_epoch
         for index in eachindex(x_line[1:line_size])
-
             additional_electron = integrate(x_line[1:index], line_multiplication[1:index] .* line_αₑ[1:index], TrapezoidalEvenFast()) 
             additional_hole = integrate(x_line[index:line_size], line_multiplication[index:line_size] .* line_αₕ[index:line_size], TrapezoidalEvenFast())
             line_multiplication_new[index] = 1.0 + additional_electron + additional_hole
@@ -41,7 +40,6 @@ function compute_recursive_multiplication(x_line::Vector{Float64}, electric_fiel
     plot!(x_line, line_multiplication, label = "Epoch $epoch", ylims=(0, Inf))
     savefig("MultiplicationRecursiveEpochsBest2.svg")
     savefig("MultiplicationRecursiveEpochsBest2.png")
-    
 end
 
 x_min = 0.0

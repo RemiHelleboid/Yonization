@@ -45,6 +45,7 @@ def impact_ionization_rate_hole_van_overstraten_silicon(F_ava, gamma_temperature
     return imapact_ionization_h
 
 
+
 if __name__ == "__main__":
     TEMP = 300
     gamma_temp = compute_gamma_temperature_dependence(TEMP)
