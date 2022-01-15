@@ -28,17 +28,18 @@ end
 
 using Plots
 using LaTeXStrings
-function plot_electric_field(x_min::Float64, x_max::Float64, number_points::Int64)
+using PyCall
+# using PyPlot
+
+function plot_electric_field(x_min::Float64, x_max::Float64, number_points::Int64; fig_path="figures")
     A, B = electric_field_profile(0.0, 3e-4, 1000)
-    # plotlyjs()
-    plot_ef = plot(A, B, show = true, 
-                     title= "Electric Field Profile",
-                     label= "Electric Field",
-                     xlabel = L"\textrm{Depth\;\;} (u.a.)",
-                     ylabel = L"\textrm{Electric\; Field\;\;} (V\cdot cm^{-1})",
-                     dpi=600)
-    savefig(plot_ef, "plot_electric_field.png")
-    savefig(plot_ef, "plot_electric_field.svg")
+    plotlyjs()
+    # gr(show = true)
+    plot!(A, B)
+    pygui()
+
+    # PyPlot.savefig(plot_ef, "$fig_path/plot_electric_field.png")
+    # PyPlot.savefig(plot_ef, "$fig_path/plot_electric_field.svg")
 end
 
 

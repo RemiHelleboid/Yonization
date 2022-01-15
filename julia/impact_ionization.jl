@@ -4,6 +4,16 @@ export αₑ, αₕ
 
 using ..ElectricFields
 
+
+function compute_dead_space(electric_field, impact_ionization_energy_threshold) 
+    return impact_ionization_energy_threshold / electric_field
+end
+
+function local_to_dead_space_model(local_coefficient, dead_space)
+    dead_space_coefficient = 1.0 / ((1.0 / local_coefficient) - 2.0 * dead_space)
+    return dead_space_coefficient
+end
+
 function αₑ(electric_field::Float64)
     a_e::Float64 = 7.03e5
     b_e::Float64 = 1.231e6
@@ -29,8 +39,14 @@ function αₕ(electric_field::Float64)
     end
 end
 
-using Plots
+
+
+
+
+
+# using Plots
 using LaTeXStrings
+using PyPlot
 
 
 function plot_ionization_coefficients(x_min::Float64, x_max::Float64, number_points::Int64)
@@ -38,25 +54,35 @@ function plot_ionization_coefficients(x_min::Float64, x_max::Float64, number_poi
     line_αₑ = map(αₑ, electric_filed_line)
     line_αₕ = map(αₕ, electric_filed_line)
     # plotlyjs()
-    plot_ef = plot(x_line, electric_filed_line, show = true, 
-                    fontfamily = "computer modern",
-                     title= "Ionization coefficients Profile",
+    # PyPlot()
+    # Plots.PlotlyJSBackend()
+    plt = PyPlot.plot(x_line, electric_filed_line,  
+                    # fontfamily = "computer modern",
+                    #  title= "Ionization coefficients Profile",
                      label= "Electric Field",
-                     xlabel = L"\textrm{Depth\;\;} (u.a.)",
-                     ylabel = L"\textrm{Ionization\; coefficient\;\;} (cm^{-1})",
-                     xformatter = :scientific,
-                     dpi=600)
-    plot!(x_line, line_αₑ, show=true, label= "Electron")
-    plot!(x_line, line_αₕ, show=true, label= "Hole")
-    savefig(plot_ef, "plot_ionization_coef_profile.png")
-    savefig(plot_ef, "plot_ionization_coef_profile.svg")
-    savefig(plot_ef, "plot_ionization_coef_profile.pdf")
+                    #  xlabel = L"\textrm{Depth\;\;} (u.a.)",
+                    #  ylabel = L"\textrm{Ionization\; coefficient\;\;} (cm^{-1})",
+                    #  xformatter = :scientific,
+                     )
+    plot(x_line, line_αₑ, label= "Electron")
+    plot(x_line, line_αₕ, label= "Hole")
+    legend()
+    tight_layout()
+    savefig("figures/plot_ionization_coef_profile.png")
+    savefig("figures/plot_ionization_coef_profile.svg")
+    savefig("figures/plot_ionization_coef_profile.pdf")
+end
+
+function plot_dead_space()
+    number_points = 1000
+    list_electric_field = collect(LinRange(1.0e3, 1.0e6, number_points))
+    list_dead_space = [compute_dead_space(ef, 1.12) for ef in list_electric_field]    
 end
 
 end # End of ImpactIonizations module
 
 using .ImpactIonizations
 
- if abspath(PROGRAM_FILE) == @__FILE__
-    ImpactIonizations.plot_ionization_coefficients(0.0, 3e-4, 1000)
- end
+if abspath(PROGRAM_FILE) == @__FILE__
+ImpactIonizations.plot_ionization_coefficients(0.0, 3e-4, 1000)
+end

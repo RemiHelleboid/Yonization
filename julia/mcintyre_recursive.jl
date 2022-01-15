@@ -8,6 +8,8 @@ using Plots
 using LaTeXStrings
 using LinearAlgebra
 using NumericalIntegration
+using Distributed
+using SharedArrays
 
 using  ..ImpactIonizations
 using ..ElectricFields
@@ -60,13 +62,57 @@ function compute_recursive_mcintyre(x_line::Vector{Float64}, electric_field_prof
     savefig("McIntyreRecursive.png")
 end
 
+function fast_compute_recursive_mcintyre(x_line::Vector{Float64}, electric_field_profile::Vector{Float64}, tolerance::Float64, boost::Float64=1.0)
+    line_size = length(x_line)
+    line_αₑ::Vector{Float64} = map(αₑ, boost .* electric_field_profile)
+    line_αₕ::Vector{Float64} = map(αₕ, boost .* electric_field_profile)
+    line_e_brp::Vector{Float64}, line_h_brp::Vector{Float64} = mcintyre_initial_guess(x_line, electric_field_profile)
+    line_e_brp_new::Vector{Float64} = zeros(line_size)
+    line_h_brp_new::Vector{Float64} = zeros(line_size)
+
+    dx = x_line[2] - x_line[1]
+
+    max_epoch = 2000
+    epoch = 0
+    difference = 1.0e6
+    p1 = plot()
+    while difference >= tolerance && epoch <= max_epoch
+        total_brp_line = line_e_brp .+ line_h_brp - line_e_brp .* line_h_brp
+        sum_integral_electron = 0.0
+        sum_integral_hole = 0.0
+        integral_hole_line::Vector{Float64} = zeros(line_size)
+        for index in eachindex(x_line)
+            sum_integral_hole += dx * (line_αₕ[index] * (1.0 - line_h_brp[index]) * total_brp_line[index])
+            integral_hole_line[index] = sum_integral_hole
+        end
+        integral_hole_line = integral_hole_line[line_size] * ones(line_size) - integral_hole_line
+
+        for index in eachindex(x_line[1:line_size])
+            sum_integral_electron += dx * line_αₑ[index] * (1.0 - line_e_brp[index]) * total_brp_line[index]
+            line_e_brp_new[index] = sum_integral_electron
+            line_h_brp_new[index] = line_h_brp[line_size] + integral_hole_line[index]
+        end
+        difference = norm(line_e_brp_new - line_e_brp)
+        line_e_brp = copy(line_e_brp_new)
+        line_h_brp = copy(line_h_brp_new)
+        println("Epoch : $epoch")
+        println("Difference : $difference")
+        epoch = epoch + 1
+    end
+    # plot!(x_line, line_e_brp, ylims=(0, 1.0), label="Electron")
+    # plot!(x_line, line_h_brp, ylims=(0, 1.0), label="Hole")
+    # gui()
+    # savefig("McIntyreRecursiveFast.svg")
+    # savefig("McIntyreRecursiveFast.png")
+end
+
 x_min = 0.0
 x_max = 3.0e-4
-number_points = 500
-boost = 1.0
+number_points = 10000000
+boost = 0.90
 x_line, electric_filed_line = ElectricFields.electric_field_profile(x_min, x_max, number_points)
-gr()
-compute_recursive_mcintyre(x_line, electric_filed_line, 1.0e-9, boost)
-gui()
+# gr()
+fast_compute_recursive_mcintyre(x_line, electric_filed_line, 1.0e-9, boost)
+# gui()
 
 end
