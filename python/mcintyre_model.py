@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.integrate import solve_bvp
@@ -26,10 +27,6 @@ def dPe_dx(x, PePh, temperature=300):
         ef, gamma_temperature) for ef in electric_field]
     dPe = (1-Pe) * alpha * (Pe + Ph - Pe*Ph)
     dPh = -(1-Ph) * beta * (Pe + Ph - Pe*Ph)
-    # plt.plot(electric_field)
-    # plt.plot(alpha)
-    # plt.plot(beta)
-    # plt.show()
     return(np.vstack((dPe, dPh)))
 
 
@@ -51,17 +48,10 @@ def function_initial_guess(x_line_efield, x_max_ef):
 def solve_mcintyre(x_line_electric_field, y_line_electric_field, tolerance):
     # initial_guess = np.zeros((2, x_line_electric_field.size)) + 1.1
     initial_guess = function_initial_guess(x_line_electric_field, 1.36e-4)
-    # initial_guess_e = []
-    # initial_guess_h = 0.15 * (x_line_electric_field[-1] - x_line_electric_field)
-    # initial_guess = np.vstack((initial_guess_e, initial_guess_h))
     initial_guess[0][0] = 0
     initial_guess[1][-1] = 0
-    # plt.plot(initial_guess[0], "-", c="b", label="Electron")
-    # plt.plot(initial_guess[1], "--", c="r",  label="Holes")
-    # plt.legend()
-    # plt.show()
     solution = solve_bvp(dPe_dx, BoundaryCondition,
-                         x_line_electric_field, initial_guess, max_nodes=10*len(x_line_electric_field), tol=tolerance, verbose=2)
+                         x_line_electric_field, initial_guess, max_nodes=len(x_line_electric_field), tol=tolerance, verbose=2)
     return solution
 
 

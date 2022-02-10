@@ -1,6 +1,12 @@
 include("electric_fields.jl")
 module ImpactIonizations
-export αₑ, αₕ 
+
+
+# using Plots!
+using LaTeXStrings
+using PyPlot
+
+export αₑ, αₕ, compute_dead_space, pₑ_dead_space, pₕ_dead_space
 
 using ..ElectricFields
 
@@ -9,10 +15,12 @@ function compute_dead_space(electric_field, impact_ionization_energy_threshold)
     return impact_ionization_energy_threshold / electric_field
 end
 
+
 function local_to_dead_space_model(local_coefficient, dead_space)
     dead_space_coefficient = 1.0 / ((1.0 / local_coefficient) - 2.0 * dead_space)
     return dead_space_coefficient
 end
+
 
 function αₑ(electric_field::Float64)
     a_e::Float64 = 7.03e5
@@ -20,6 +28,7 @@ function αₑ(electric_field::Float64)
     imapact_ionization_e::Float64 = a_e * exp(-b_e / electric_field)
     return imapact_ionization_e
 end
+
 
 function αₕ(electric_field::Float64)
     E_threshold::Float64 = 0.0
@@ -40,13 +49,23 @@ function αₕ(electric_field::Float64)
 end
 
 
+function pₑ_dead_space(electric_field, x_start, x_position, dead_space)
+    if (x_position < x_start + dead_space)
+        return 0.0
+    else
+        return alpha_loc = local_to_dead_space_model(αₑ(electric_field), dead_space)
+    end
+end
 
 
+function pₕ_dead_space(electric_field, x_start, x_position, dead_space)
+    if (x_position > x_start - dead_space)
+        return 0.0
+    else
+        return alpha_loc = local_to_dead_space_model(αₕ(electric_field), dead_space)
+    end
+end
 
-
-# using Plots
-using LaTeXStrings
-using PyPlot
 
 
 function plot_ionization_coefficients(x_min::Float64, x_max::Float64, number_points::Int64)

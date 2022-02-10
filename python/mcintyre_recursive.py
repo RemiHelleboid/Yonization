@@ -61,7 +61,7 @@ def compute_mcintyre_recursive_local(x_line, electric_field, tolerance, boost=1.
         epoch += 1
         list_epochs.append(epoch)
         list_differences.append(difference)
-        print(f"\rEpoch n° {epoch}  ---->   difference = {difference:2e}  with a maximum of {np.max(e_brp_line):2e} ", end="", flush=True)
+        # print(f"\rEpoch n° {epoch}  ---->   difference = {difference:2e}  with a maximum of {np.max(e_brp_line):2e} ", end="", flush=True)
         if plot:
             axs[0].plot(x_line, e_brp_line, label="Electron")
             axs[0].plot(x_line, h_brp_line, ls = "--", label="Hole")
@@ -127,10 +127,10 @@ def fast_compute_mcintyre_recursive_local(x_line, electric_field, tolerance, boo
         # plt.plot(line_integral_holes, ls="--")
         # plt.show()
 
-        for index in range(1, size_line):
+        for index in range(0, size_line):
             sum_integral_electron += dx * alpha_line[index] * (1.0 - e_brp_line[index]) * total_brp[index]
             new_e_brp = e_brp_line[0] + sum_integral_electron
-            new_h_brp = h_brp_line[-1] + line_integral_holes[index]
+            new_h_brp = h_brp_line[-1] +  line_integral_holes[index]
             e_brp_line_new[index] = new_e_brp
             h_brp_line_new[index] = new_h_brp
 
@@ -142,7 +142,7 @@ def fast_compute_mcintyre_recursive_local(x_line, electric_field, tolerance, boo
         epoch += 1
         list_epochs.append(epoch)
         list_differences.append(difference)
-        print(f"\rEpoch n° {epoch}  ---->   difference = {difference:2e}  with a maximum of {np.max(e_brp_line):2e} ", end="", flush=True)
+        # print(f"\rEpoch n° {epoch}  ---->   difference = {difference:2e}  with a maximum of {np.max(e_brp_line):2e} ", end="", flush=True)
         if plot:
             axs[0].plot(x_line, e_brp_line, label="Electron")
             axs[0].plot(x_line, h_brp_line, ls = "--", label="Hole")
@@ -163,7 +163,7 @@ def fast_compute_mcintyre_recursive_local(x_line, electric_field, tolerance, boo
             # fig.clear()
             plt.show()
             fig.savefig("McIntyreRecursive.pdf")
-    return
+    return e_brp_line, h_brp_line
 
 
 

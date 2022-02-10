@@ -15,7 +15,16 @@ import mcintyre_model
 import impact_ionization
 import electric_field_profile
 import mcintyre_newton
-plt.style.context("seaborn-paper")
+
+
+import matplotlib.style
+import matplotlib as mpl
+from cycler import cycler
+mpl.rcParams['axes.prop_cycle'] = cycler(color='bgrcmyk')
+
+mpl.rcParams['font.family'] = 'Avenir'
+plt.rcParams['font.size'] = 18
+plt.rcParams['axes.linewidth'] = 2
 
 cm = 1.0 / 2.54
 
@@ -203,13 +212,13 @@ def plot_convergence(min_size, max_size, nb_pt):
         list_error_L2_hbrp_solvebvp.append(Error_L2_h_brp_bvp_solve)
         list_error_L2_hbrp_newton.append(Error_L2_h_brp_newton)
     
-    fig, axs = plt.subplots(1, figsize=(10*cm, 10*cm))
-    # axs.loglog(list_size, list_error_L2_ebrp_sovlebvp, ls="-", marker="+",
-    #     label="e_breakdown_probability scipy.integrate.solve_bvp")
+    fig, axs = plt.subplots(1, figsize=(20*cm, 20*cm))
+    axs.loglog(list_size, list_error_L2_ebrp_sovlebvp, ls="-", marker="+",
+        label="e_breakdown_probability scipy.integrate.solve_bvp")
     axs.loglog(list_size, list_error_L2_ebrp_newton, ls="-",
         marker="*", label="e_breakdown_probability error")
-    # axs.loglog(list_size, list_error_L2_hbrp_solvebvp, ls="-",
-    #     marker="+", label="h_breakdown_probability scipy.integrate.solve_bvp")
+    axs.loglog(list_size, list_error_L2_hbrp_solvebvp, ls="-",
+        marker="+", label="h_breakdown_probability scipy.integrate.solve_bvp")
     axs.loglog(list_size, list_error_L2_hbrp_newton, ls="-",
         marker="+", label="h_breakdown_probability error")
     axs.legend()
@@ -227,5 +236,5 @@ def plot_convergence(min_size, max_size, nb_pt):
 
 if __name__ == "__main__":
     # main_comparison(2500, 1e-12, True)
-    plot_convergence(100, 100000, 11)
+    plot_convergence(100, 10000, 4)
     # compare_time(10, 10000, 11)

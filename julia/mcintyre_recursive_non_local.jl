@@ -31,8 +31,20 @@ end
 
 function compute_recursive_mcintyre(x_line::Vector{Float64}, electric_field_profile::Vector{Float64}, tolerance::Float64, boost::Float64=1.0)
     line_size = length(x_line)
-    line_αₑ::Vector{Float64} = map(αₑ, boost .* electric_field_profile)
-    line_αₕ::Vector{Float64} = map(αₕ, boost .* electric_field_profile)
+
+
+    line_αₑ = zeros(Float64, line_size, line_size)
+    
+    line_αₕ = zeros(Float64, line_size, line_size)
+    
+    for index_start in 1:line_size
+        for index_pos in 1:line_size
+            dead_space_e = compute_dead_space(electric_field_profile[index_start], 1.1) * 0
+            dead_space_h = compute_dead_space(electric_field_profile[index_start], 1.5) * 0
+            line_αₑ[index_start] = pₑ_dead_space(boost * electric_field_profile[index_pos], x_line[index_start], x_line[index_pos], dead_space_e)
+            line_αₕ[index_start] = pₕ_dead_space(boost * electric_field_profile[index_pos], x_line[index_start], x_line[index_pos], dead_space_h)
+        end
+    end
     line_e_brp::Vector{Float64}, line_h_brp::Vector{Float64} = mcintyre_initial_guess(x_line, electric_field_profile)
     line_e_brp_new::Vector{Float64} = zeros(line_size)
     line_h_brp_new::Vector{Float64} = zeros(line_size)
@@ -44,8 +56,8 @@ function compute_recursive_mcintyre(x_line::Vector{Float64}, electric_field_prof
     while difference >= tolerance && epoch <= max_epoch
         total_brp_line = line_e_brp .+ line_h_brp - line_e_brp .* line_h_brp
         for index in eachindex(x_line[1:line_size])
-            new_e_brp = line_e_brp[1] + integrate(x_line[1:index],line_αₑ[1:index] .* (ones(index) - line_e_brp[1:index]) .* total_brp_line[1:index], TrapezoidalEvenFast())
-            new_h_brp = line_h_brp[line_size] + integrate(x_line[index:line_size], line_αₕ[index:line_size] .* (ones(line_size - index + 1) - line_h_brp[index:line_size]) .* total_brp_line[index:line_size], TrapezoidalEvenFast())
+            new_e_brp = line_e_brp[1] + integrate(x_line[1:index], line_αₑ[index, 1:index] .* (ones(index) - line_e_brp[1:index]) .* total_brp_line[1:index], TrapezoidalEvenFast())
+            new_h_brp = line_h_brp[line_size] + integrate(x_line[index:line_size], line_αₕ[index, index:line_size] .* (ones(line_size - index + 1) - line_h_brp[index:line_size]) .* total_brp_line[index:line_size], TrapezoidalEvenFast())
             line_e_brp_new[index] = new_e_brp
             line_h_brp_new[index] = new_h_brp
         end
@@ -75,11 +87,8 @@ function fast_compute_recursive_mcintyre(x_line::Vector{Float64}, electric_field
     max_epoch = 2000
     epoch = 0
     difference = 1.0e6
-    plot(title = "Recursive McIntyre Method", xlabel = "Depth (u.a.)", ylabel = "Avalanche Breakdown Probability", size = (1200, 720))
-    plot!(xlims = (0, maximum(x_line)), ylims = (-0.1, 1.1))
-    plot!([], [], linecolor = :red, label="Holes")
-    plot!([], [], linecolor = :blue, label="Electron")
-    anim = @animate while difference >= tolerance && epoch <= max_epoch
+    p1 = plot()
+    while difference >= tolerance && epoch <= max_epoch
         total_brp_line = line_e_brp .+ line_h_brp - line_e_brp .* line_h_brp
         sum_integral_electron = 0.0
         sum_integral_hole = 0.0
@@ -98,29 +107,24 @@ function fast_compute_recursive_mcintyre(x_line::Vector{Float64}, electric_field
         difference = norm(line_e_brp_new - line_e_brp)
         line_e_brp = copy(line_e_brp_new)
         line_h_brp = copy(line_h_brp_new)
-        # println("Epoch : $epoch")
-        # println("Difference : $difference")
-        plot!(x_line, line_h_brp, label="")
-        plot!(x_line, line_e_brp, label="")
-        plot!(title = "Recursive McIntyre Method\nEpoch : $epoch")
-        # Plots.frame(anim)
+        println("Epoch : $epoch")
+        println("Difference : $difference")
         epoch = epoch + 1
     end
+    # plot!(x_line, line_e_brp, ylims=(0, 1.0), label="Electron")
     # plot!(x_line, line_h_brp, ylims=(0, 1.0), label="Hole")
     # gui()
     # savefig("McIntyreRecursiveFast.svg")
     # savefig("McIntyreRecursiveFast.png")
-    gif(anim, "tutorial_anim_fps30.gif", fps = 10)
 end
 
 x_min = 0.0
 x_max = 3.0e-4
 number_points = 1000
-boost = 1.1
+boost = 1.5
 x_line, electric_filed_line = ElectricFields.electric_field_profile(x_min, x_max, number_points)
 # gr()
-@time fast_compute_recursive_mcintyre(x_line, electric_filed_line, 1.0e-12, boost)
-# @time fast_compute_recursive_mcintyre(x_line, electric_filed_line, 1.0e-9, boost)
+compute_recursive_mcintyre(x_line, electric_filed_line, 1.0e-9, boost)
 # gui()
 
 end

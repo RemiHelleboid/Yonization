@@ -25,6 +25,16 @@ def function_dP_e(P_e, P_h, alpha_e):
 def function_dP_h(P_e, P_h, alpha_h):
     return -(1 - P_h) * alpha_h * (P_e + P_h - P_e * P_h)
 
+def function_initial_guess(x_line_efield, x_max_ef):
+    initial_guess_e = np.zeros_like(x_line_efield)
+    initial_guess_h = np.zeros_like(x_line_efield)
+    for k in range(len(x_line_efield)):
+        if x_line_efield[k] > x_max_ef:
+            initial_guess_e[k] = 0.5
+        else:
+            initial_guess_h[k] = 0.2
+    return np.vstack((initial_guess_e, initial_guess_h))
+
 
 def compute_elementary_second_member(index_point, list_x, list_electric_field, breakdownProbability):
     dx = list_x[index_point + 1] - list_x[index_point]
@@ -93,31 +103,10 @@ def assemble_second_member(list_x, list_electric_field, breakdownProbability):
         q_i = compute_elementary_second_member(index, list_x, list_electric_field, breakdownProbability)
         second_member[2 * index] = - q_i[0]
         second_member[2 * index + 1] = - q_i[1]
-    # second_member[2 * N - 2] = breakdownProbability[0]
-    # second_member[2 * N - 1] = breakdownProbability[2 * N - 1]
+    second_member[2 * N - 2] = breakdownProbability[0]
+    second_member[2 * N - 1] = breakdownProbability[2 * N - 1]
     return second_member
 
-
-def compute_newton_solution(list_x, list_electric_field, GuessbreakdownProbability, tolerance):
-    N = len(list_x)
-    epoch = 0
-    g_0 = 0.0
-    breakdownProbability = GuessbreakdownProbability
-    W = np.zeros_like(breakdownProbability)
-    W_new = np.zeros_like(breakdownProbability)
-    lambda_newton = 1.0
-    norm_residu = 1e6
-    while norm_residu > tolerance and epoch <= 100:
-        # print(f"EPOCH    : {epoch}")
-        matrix_A = assemble_matrix(list_x, list_electric_field, breakdownProbability)
-        second_member = assemble_second_member(list_x, list_electric_field, breakdownProbability)
-        W = sparse.linalg.spsolve(matrix_A, second_member)
-        norm_residu = np.linalg.norm(W)
-        breakdownProbability = breakdownProbability + lambda_newton * W
-        epoch += 1
-        print(f"Epoch : {epoch}  --->  Current residu norm = {norm_residu}")
-    # print(f"Final error : {norm_residu}")
-    return breakdownProbability
 
 def brp_new_ton_to_eh_brp(breakdown_probability_newton):
     if (len(breakdown_probability_newton) % 2 != 0):
@@ -132,11 +121,40 @@ def brp_new_ton_to_eh_brp(breakdown_probability_newton):
 
 
 
+def compute_newton_solution(list_x, list_electric_field, initial_guess=None, tolerance=1e-6):
+    N = len(list_x)
+    epoch = 0
+    g_0 = 0.0
+    if initial_guess is None:
+        initial_guess = function_initial_guess(list_x, list_x[np.argmax(np.abs(list_electric_field))])
+    breakdownProbability = np.zeros(2 * N)
+    for k in range(N):
+        breakdownProbability[2 * k] = initial_guess[0][k]
+        breakdownProbability[2 * k + 1] = initial_guess[1][k]
+    print(breakdownProbability.shape)
+    W = np.zeros_like(breakdownProbability)
+    W_new = np.zeros_like(breakdownProbability)
+    lambda_newton = 0.5
+    norm_residu = 1e6
+    while norm_residu > tolerance and epoch <= 100:
+        # print(f"EPOCH    : {epoch}")
+        matrix_A = assemble_matrix(list_x, list_electric_field, breakdownProbability)
+        second_member = assemble_second_member(list_x, list_electric_field, breakdownProbability)
+        W = sparse.linalg.spsolve(matrix_A, second_member)
+        norm_residu = np.linalg.norm(W)
+        breakdownProbability = breakdownProbability + lambda_newton * W
+        epoch += 1
+        print(f"Epoch : {epoch}  --->  Current residu norm = {norm_residu}")
+    # print(f"Final error : {norm_residu}")
+    return brp_new_ton_to_eh_brp(breakdownProbability)
+
+
+
 if __name__ == "__main__":
-    tolerance = 1e-12
+    tolerance = 1e-8
     mesh_line = np.linspace(0.0, 1.8e-4, 1000)
     electric_field = np.array([electric_field_profile.function_electric_field(x) for x in mesh_line])
-    boost_ef = 0.93229
+    boost_ef = 1.0
     electric_field = boost_ef * electric_field
     x_max_ef = mesh_line[np.argmax(electric_field)]
     initial_guess = np.zeros(2 * len(mesh_line))
@@ -146,9 +164,9 @@ if __name__ == "__main__":
         initial_guess[2 * k + 1] = init_initial_guess[1][k]
     matrix_A = assemble_matrix(mesh_line, electric_field, initial_guess)
     matrix_A_plain = matrix_A.toarray()
-    brp_newton = compute_newton_solution(mesh_line, electric_field, initial_guess, tolerance)
-    eBreakdownProbability, hBreakdownProbability = brp_new_ton_to_eh_brp(brp_newton)
+    eBreakdownProbability, hBreakdownProbability = compute_newton_solution(mesh_line, electric_field, tolerance=tolerance)
     total_breakdown_probability = eBreakdownProbability + hBreakdownProbability - eBreakdownProbability * hBreakdownProbability
+    plt.plot(mesh_line, electric_field)
     plt.plot(mesh_line, eBreakdownProbability, "-", c="b", label="Electron")
     plt.plot(mesh_line, hBreakdownProbability, "--", c="r",  label="Holes")
     plt.plot(mesh_line, total_breakdown_probability, "-", c="g",  label="Total")
