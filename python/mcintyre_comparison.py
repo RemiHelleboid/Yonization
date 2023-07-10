@@ -11,10 +11,11 @@ from scipy.sparse.linalg import spsolve
 from timeit import default_timer as timer
 from scipy import interpolate
 
-    import mcintyre_model
-    import impact_ionization
-    import electric_field_profile
-    import mcintyre_newton
+import mcintyre_model
+import impact_ionization
+import electric_field_profile
+import mcintyre_newton
+import mcintyre_recursive
 
 
 import matplotlib.style
@@ -101,12 +102,12 @@ def main_comparison(nb_points, tolerance, plot=False):
         axs.legend()
         
         fig.tight_layout()
-        fig.savefig("mc_intyre_newton_scipy_plot.pdf")
+        fig.savefig("results/mc_intyre_newton_scipy_plot.pdf")
         # axs.set_title(
         #     "Comparsion of Scipy scipy.integrate.solve_bvp\n and Newton method for solving McIntyre equations.")
         # fig.show()
         plt.show()
-    return time_compute_bvp, time_compute_newton, discret_L2_norm
+    return time_compute_bvp, time_compute_newton, discrefig.savefig("t_L2_norm
 
 
 def compare_time(min_size, max_size, nb_pt):
@@ -228,7 +229,7 @@ def plot_convergence(min_size, max_size, nb_pt):
     axs.set_xlabel("Mesh size")
     axs.grid(True, which="both")
     fig.tight_layout()
-    fig.savefig("mcintyre_newton_convergence.pdf")
+    fig.savefig("results/mcintyre_newton_convergence.pdf")
     plt.show()
     np.savetxt("convergence_mcintyre_methods.csv", 
         np.log(np.array([list_size, list_error_L2_ebrp_sovlebvp, list_error_L2_ebrp_newton, list_error_L2_hbrp_solvebvp, list_error_L2_hbrp_newton]).T),

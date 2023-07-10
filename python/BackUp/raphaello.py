@@ -88,7 +88,7 @@ def compute_mcintyre_recursive_local(x_line, electric_field, tolerance, boost=1.
             axsmax.clear()
             # fig.clear()
     plt.show()
-    fig.savefig("McIntyreRecursive.pdf")
+    fig.savefig("results/McIntyreRecursive.pdf")
     return
 
 
@@ -171,7 +171,7 @@ def fast_compute_mcintyre_recursive_local(x_line, electric_field, tolerance, boo
             # fig.clear()
     if plot:
         plt.show()
-        fig.savefig("McIntyreRecursive.pdf")
+        fig.savefig("results/McIntyreRecursive.pdf")
     return e_brp_line, h_brp_line
 
 

@@ -122,7 +122,7 @@ def compute_mcintyre_recursive_local(x_line, electric_field, tolerance=1e-6, Max
     if plot:
         # fig.clear()
         plt.show()
-        fig.savefig("McIntyreRecursive.pdf")
+        fig.savefig("results/McIntyreRecursive.pdf")
     return
 
 

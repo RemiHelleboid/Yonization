@@ -7,7 +7,7 @@ import mcintyre_model
 import impact_ionization
 import electric_field_profile
 import mcintyre_newton
-import raphaello
+import mcintyre_recursive
 import mcintyre_leti
 
 import scienceplots
@@ -19,19 +19,19 @@ def get_total_breakdown_probability(eBreakdownProbability, hBreakdownProbability
 
 def get_all_values():
     tolerance = 1e-12
-    mesh_line = np.linspace(0.0, 4.5e-4, 10000)
+    mesh_line = np.linspace(0.0, 4.5e-4, 1000)
     electric_field = np.array([electric_field_profile.function_electric_field(x) for x in mesh_line])
 
-    filename = "VDEVICE.csv"
-    x, y = np.loadtxt(filename, delimiter=',', unpack=True, skiprows=1)
+    # filename = "VDEVICE.csv"
+    # x, y = np.loadtxt(filename, delimiter=',', unpack=True, skiprows=1)
     # mesh_line = np.linspace(np.min(x), np.max(x), int(nb_points))
     # electric_field = functorize(x, y)(mesh_line)
-    mesh_line = x
-    electric_field = y
+    # mesh_line = x
+    # electric_field = y
     
     Newton_eBreakdownProbability, Newton_hBreakdownProbability = mcintyre_newton.compute_newton_solution(mesh_line, electric_field, tolerance=tolerance)
     total_breakdown_probability = get_total_breakdown_probability(Newton_eBreakdownProbability, Newton_hBreakdownProbability)
-    Recursive_eBrP, Recursive_hBrP = raphaello.fast_compute_mcintyre_recursive_local(mesh_line, electric_field, tolerance=tolerance, plot=False)
+    Recursive_eBrP, Recursive_hBrP = mcintyre_recursive.fast_compute_mcintyre_recursive_local(mesh_line, electric_field, tolerance=tolerance, plot=False)
     Leti_eBrP, Leti_hBrP, P_total = mcintyre_leti.Compute_Ptotal(mesh_line, electric_field)
 
     sol = mcintyre_model.solve_mcintyre(mesh_line, electric_field, tolerance)
@@ -61,15 +61,17 @@ def get_all_values():
 
 def check_results_values():
     tolerance = 1e-12
-    # mesh_line = np.linspace(0.0, 4.5e-4, 1000)
-    # electric_field = np.array([electric_field_profile.function_electric_field(x) for x in mesh_line])
-    filename = "VDEVICE.csv"
-    x, y = np.loadtxt(filename, delimiter=',', unpack=True, skiprows=1)
-    x = x * 1e-4
-    print(f"Solving for {len(x)} points")
-    nb_points = 2000
-    mesh_line = np.linspace(np.min(x), np.max(x), int(nb_points))
-    electric_field = np.interp(mesh_line, x, y)
+    mesh_line = np.linspace(0.0, 4.5e-4, 1000)
+    electric_field = np.array([electric_field_profile.function_electric_field(x) for x in mesh_line])
+    
+    # If using the VDEVICE.csv file
+    # filename = "VDEVICE.csv"
+    # x, y = np.loadtxt(filename, delimiter=',', unpack=True, skiprows=1)
+    # x = x * 1e-4
+    # print(f"Solving for {len(x)} points")
+    # nb_points = 2000
+    # mesh_line = np.linspace(np.min(x), np.max(x), int(nb_points))
+    # electric_field = np.interp(mesh_line, x, y)
 
     boost_ef = 1.0
     electric_field = boost_ef * electric_field
@@ -91,7 +93,7 @@ def check_results_values():
 
     Newton_eBreakdownProbability, Newton_hBreakdownProbability = mcintyre_newton.compute_newton_solution(mesh_line, electric_field, tolerance=tolerance)
     total_breakdown_probability = get_total_breakdown_probability(Newton_eBreakdownProbability, Newton_hBreakdownProbability)
-    Recursive_eBrP, Recursive_hBrP = raphaello.fast_compute_mcintyre_recursive_local(mesh_line, electric_field, tolerance=tolerance, plot=False)
+    Recursive_eBrP, Recursive_hBrP = mcintyre_recursive.fast_compute_mcintyre_recursive_local(mesh_line, electric_field, tolerance=tolerance, plot=False)
     Leti_eBrP, Leti_hBrP, P_total = mcintyre_leti.Compute_Ptotal(mesh_line, electric_field)
 
     tolerance = 1e-12
@@ -412,11 +414,10 @@ def check_eq_9():
 
 if __name__ == "__main__":
     check_results_values()
-    # check_eq_1_2()
-    # check_eq_7()    
-    # check_eq_7a()
-    # check_eq_7b()
-    # check_eq_8()
-    # check_eq_9()
-    # check_eq_Ph0()
+    check_eq_1_2()
+    check_eq_7()    
+    check_eq_7a()
+    check_eq_7b()
+    check_eq_8()
+    check_eq_9()
     
