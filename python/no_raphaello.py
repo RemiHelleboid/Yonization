@@ -28,8 +28,12 @@ def compute_mcintyre_recursive_local(x_line, electric_field, tolerance, boost=1.
         f) for f in electric_field])
     e_brp_line, h_brp_line = mcintyre_model.function_initial_guess(
         x_line, x_line[np.argmax(electric_field)])
-    # e_brp_line = np.zeros_like(x_line) +0.5
-    # h_brp_line = np.zeros_like(x_line) + 0.2
+
+    plt.plot(x_line, electric_field, label="EF FOR NO BRP")
+    plt.legend()
+    plt.show()
+    
+    e_brp_line *= 0.18
     e_brp_line_new = np.zeros_like(x_line)
     h_brp_line_new = np.zeros_like(x_line)
     list_epochs = []
@@ -43,16 +47,28 @@ def compute_mcintyre_recursive_local(x_line, electric_field, tolerance, boost=1.
         axs[0].plot(x_line, e_brp_line, label="Electron")
         axs[0].plot(x_line, h_brp_line, label="Hole")
         axsmax = axs[1].twinx()
+        axs[0].legend()
 
     while difference >= tolerance and epoch <= MaxEpoch:
-        total_brp = e_brp_line + h_brp_line - e_brp_line * h_brp_line
+        # total_brp = (1-e_brp_line) + (1-h_brp_line) - (1-e_brp_line) * (1-h_brp_line)
+        total_brp = (e_brp_line) + (h_brp_line) - (e_brp_line) * (h_brp_line)
         for index in range(len(x_line)):
-            new_e_brp = e_brp_line[0] + np.trapz(alpha_line[:index] * (
-                1.0 - e_brp_line[:index]) * total_brp[:index], x_line[:index])
-            new_h_brp = h_brp_line[-1] + np.trapz(beta_line[index:] * (
-                1.0 - h_brp_line[index:]) * total_brp[index:], x_line[index:])
+            P_SE = np.exp(-np.trapz(alpha_line[:index], x_line[:index]))
+            P_SH = np.exp(-np.trapz(beta_line[index:], x_line[index:]))
+            p_e = alpha_line[:index] * P_SE
+            p_h = beta_line[index:] * P_SH
+            print(f"{P_SE}")
+            print(f"{P_SH}")
+            # new_e_brp = 0.0 * P_SE + np.trapz(p_e * e_brp_line[:index] ** 2.0 * h_brp_line[:index], x_line[:index])
+            # new_h_brp = 0.0 * P_SH + np.trapz(p_h * h_brp_line[index:] ** 2.0 * e_brp_line[index:], x_line[index:])
+            
+            new_e_brp = np.trapz(p_e * total_brp[:index] * e_brp_line[:index], x_line[:index])
+            new_h_brp = np.trapz(p_h * total_brp[index:] * h_brp_line[index:], x_line[index:])
+            
+            
             e_brp_line_new[index] = new_e_brp
             h_brp_line_new[index] = new_h_brp
+            
         difference = (1.0 / (np.max(e_brp_line) + np.max(h_brp_line))) * np.linalg.norm(
             e_brp_line - e_brp_line_new) + np.linalg.norm(h_brp_line - h_brp_line_new)
         e_brp_line = np.copy(e_brp_line_new)
@@ -61,7 +77,7 @@ def compute_mcintyre_recursive_local(x_line, electric_field, tolerance, boost=1.
         epoch += 1
         list_epochs.append(epoch)
         list_differences.append(difference)
-        # print(f"\rEpoch n° {epoch}  ---->   difference = {difference:2e}  with a maximum of {np.max(e_brp_line):2e} ", end="", flush=True)
+        print(f"\rEpoch n° {epoch}  ---->   difference = {difference:2e}  with a maximum of {np.max(e_brp_line):2e} ", end="", flush=True)
         if plot:
             axs[0].plot(x_line, e_brp_line, label="Electron")
             axs[0].plot(x_line, h_brp_line, ls = "--", label="Hole")
@@ -69,19 +85,20 @@ def compute_mcintyre_recursive_local(x_line, electric_field, tolerance, boost=1.
                 f"Recursive soluions of the McIntyre problem after {epoch} epochs")
             axs[0].set_xlabel("X (a.u.)")
             axs[0].set_ylabel("Breakdown Probability")
-            axs[0].set_ylim(-0.1, )
-            axs[1].plot(list_epochs, list_differences, label = "Error between sucessive iterations")
+            axs[0].set_ylim(-0.1, 2)
+            axs[1].plot(list_epochs, list_differences, marker='+', label = "Error between sucessive iterations")
             axs[1].set_title("Total difference between succesive itterations.")
             axs[1].set_yscale("log")
             axsmax.plot(list_epochs, list_max_ebrp, ls="--", label = "max electron breakdown probability")
             axs[1].legend()
             axsmax.set_ylim(0, 1.0)
-            plt.pause(1.0e-3)
+            plt.pause(1.0e-1)
+            axs[0].clear()
             axs[1].clear()
             axsmax.clear()
             # fig.clear()
-            plt.show()
-            fig.savefig("McIntyreRecursive.pdf")
+    plt.show()
+    fig.savefig("McIntyreRecursive.pdf")
     return
 
 
@@ -95,6 +112,9 @@ def fast_compute_mcintyre_recursive_local(x_line, electric_field, tolerance, boo
         x_line, x_line[np.argmax(electric_field)])
     # e_brp_line = np.zeros_like(x_line) +0.5
     # h_brp_line = np.zeros_like(x_line) + 0.2
+    plt.plot(x_line, electric_field, label="EF FOR NO BRP")
+    plt.legend()
+    plt.show()
     e_brp_line_new = np.zeros_like(x_line)
     h_brp_line_new = np.zeros_like(x_line)
     list_epochs = []
@@ -151,7 +171,7 @@ def fast_compute_mcintyre_recursive_local(x_line, electric_field, tolerance, boo
             axs[0].set_xlabel("X (a.u.)")
             axs[0].set_ylabel("Breakdown Probability")
             axs[0].set_ylim(-0.1, 1)
-            axs[1].plot(list_epochs, list_differences, label = "Error between sucessive iterations")
+            axs[1].plot(list_epochs, list_differences, marker='+', label = "Error between sucessive iterations")
             axs[1].set_title("Total difference between succesive itterations.")
             axs[1].set_yscale("log")
             axsmax.plot(list_epochs, list_max_ebrp, ls="--", label = "max electron breakdown probability")
@@ -170,13 +190,14 @@ def fast_compute_mcintyre_recursive_local(x_line, electric_field, tolerance, boo
 
 
 if __name__ == "__main__":
-    mesh_line = np.linspace(0.0, 3e-4, 5000)
+    mesh_line = np.linspace(0.0, 3e-4, 400)
     electric_field = np.array([
         electric_field_profile.function_electric_field(x) for x in mesh_line])
-    electric_field *= 0.975
+    electric_field *= 0.955
+    
     start_slow_method = timer()
-    # compute_mcintyre_recursive_local(
-    #     mesh_line, electric_field, 1e-6, 1.0, False)
+    compute_mcintyre_recursive_local(
+        mesh_line, electric_field, 1e-9, 1.0, True)
     end_slow_method = timer()
     time_compute_slow_method = end_slow_method - start_slow_method
     print(f"Time to compute with the slow method : {time_compute_slow_method}")

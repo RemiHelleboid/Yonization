@@ -41,7 +41,7 @@ def function_initial_guess(x_line_efield, x_max_ef):
         if x_line_efield[k] > x_max_ef:
             initial_guess_e[k] = 0.5
         else:
-            initial_guess_h[k] = 0.2
+            initial_guess_h[k] = 0.4
     return np.vstack((initial_guess_e, initial_guess_h))
 
 
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     mesh_line = np.linspace(0.0, 1.8e-4, 1000)
     electric_field = np.array(
         [electric_field_profile.function_electric_field(x) for x in mesh_line])
-    boost_ef = 0.93229
+    boost_ef = 1.0
     electric_field = boost_ef * electric_field
     tolerance = 1e-12
     sol = solve_mcintyre(mesh_line, electric_field, tolerance)

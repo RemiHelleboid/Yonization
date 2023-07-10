@@ -30,9 +30,9 @@ def function_initial_guess(x_line_efield, x_max_ef):
     initial_guess_h = np.zeros_like(x_line_efield)
     for k in range(len(x_line_efield)):
         if x_line_efield[k] > x_max_ef:
-            initial_guess_e[k] = 0.5
+            initial_guess_e[k] = 0.9
         else:
-            initial_guess_h[k] = 0.2
+            initial_guess_h[k] = 0.4
     return np.vstack((initial_guess_e, initial_guess_h))
 
 
@@ -72,9 +72,7 @@ def compute_elementary_matrix(index_point, P_e, P_h, list_electric_field):
 def assemble_matrix(list_x, list_electric_field, breakdownProbability):
     one_half = 0.5
     nb_points = len(list_x)
-    matrix_A = sparse.dok_matrix((2 * nb_points, 2 * nb_points))
-    matrix_A_sparse = sparse.dok_matrix((2 * nb_points, 2 * nb_points))
-    list_blocks = []
+    matrix_A_sparse = np.zeros((2 * nb_points, 2 * nb_points))
     for index in range(nb_points - 1):
         x   = list_x[index]
         xpp = list_x[index + 1]
@@ -92,7 +90,7 @@ def assemble_matrix(list_x, list_electric_field, breakdownProbability):
         matrix_A_sparse[2 * index + 1, 2 * index + 3] = inv_dx - one_half * elementary_second_member_ipp[3]
     matrix_A_sparse[2 * nb_points - 1, 2 * nb_points - 1] = 1.0
     matrix_A_sparse[2 * nb_points - 2, 0] = 1.0
-    matrix_A = matrix_A_sparse.tocsr()
+    matrix_A = sparse.csr_matrix(matrix_A_sparse)
     return matrix_A
 
 
@@ -131,10 +129,9 @@ def compute_newton_solution(list_x, list_electric_field, initial_guess=None, tol
     for k in range(N):
         breakdownProbability[2 * k] = initial_guess[0][k]
         breakdownProbability[2 * k + 1] = initial_guess[1][k]
-    print(breakdownProbability.shape)
     W = np.zeros_like(breakdownProbability)
     W_new = np.zeros_like(breakdownProbability)
-    lambda_newton = 0.5
+    lambda_newton = 0.95
     norm_residu = 1e6
     while norm_residu > tolerance and epoch <= 100:
         # print(f"EPOCH    : {epoch}")
@@ -144,7 +141,7 @@ def compute_newton_solution(list_x, list_electric_field, initial_guess=None, tol
         norm_residu = np.linalg.norm(W)
         breakdownProbability = breakdownProbability + lambda_newton * W
         epoch += 1
-        print(f"Epoch : {epoch}  --->  Current residu norm = {norm_residu}")
+        print(f"\rEpoch : {epoch}  --->  Current residu norm = {norm_residu}", end="", flush=True)
     # print(f"Final error : {norm_residu}")
     return brp_new_ton_to_eh_brp(breakdownProbability)
 
@@ -157,16 +154,9 @@ if __name__ == "__main__":
     boost_ef = 1.0
     electric_field = boost_ef * electric_field
     x_max_ef = mesh_line[np.argmax(electric_field)]
-    initial_guess = np.zeros(2 * len(mesh_line))
-    init_initial_guess = mcintyre_model.function_initial_guess(mesh_line, x_max_ef)
-    for k in range(len(init_initial_guess[0])):
-        initial_guess[2 * k] = init_initial_guess[0][k]
-        initial_guess[2 * k + 1] = init_initial_guess[1][k]
-    matrix_A = assemble_matrix(mesh_line, electric_field, initial_guess)
-    matrix_A_plain = matrix_A.toarray()
     eBreakdownProbability, hBreakdownProbability = compute_newton_solution(mesh_line, electric_field, tolerance=tolerance)
     total_breakdown_probability = eBreakdownProbability + hBreakdownProbability - eBreakdownProbability * hBreakdownProbability
-    plt.plot(mesh_line, electric_field)
+    plt.plot(mesh_line, electric_field/np.max(electric_field))
     plt.plot(mesh_line, eBreakdownProbability, "-", c="b", label="Electron")
     plt.plot(mesh_line, hBreakdownProbability, "--", c="r",  label="Holes")
     plt.plot(mesh_line, total_breakdown_probability, "-", c="g",  label="Total")

@@ -7,6 +7,17 @@ from numpy.core.function_base import geomspace
 boltzmann_constant = 1.380649000000000092e-23
 
 
+
+def compute_dead_space(electric_field, impact_ionization_energy_threshold):
+    return impact_ionization_energy_threshold / electric_field
+
+
+def local_to_dead_space_model(local_coefficient, dead_space):
+    dead_space_coefficient = 1.0 / ((1.0 / local_coefficient) - 2.0 * dead_space)
+    # dead_space_coefficient = local_coefficient
+    return dead_space_coefficient
+
+
 def compute_gamma_temperature_dependence(temperature):
     ref_temperature = 300.0
     # reduced planck constant x w_optical_phonon
@@ -28,6 +39,17 @@ def impact_ionization_rate_electron_van_overstraten_silicon(F_ava, gamma_tempera
         return imapact_ionization_e
 
 
+def dead_space_impact_ionization_rate_electron_van_overstraten_silicon(F_ava, x_start, x_position, dead_space, gamma_temperature_dependence = 1.0):
+    if x_position <= x_start + dead_space:
+        return local_to_dead_space_model(impact_ionization_rate_electron_van_overstraten_silicon(F_ava, gamma_temperature_dependence), dead_space)
+    else:
+        return 0.0
+
+
+
+def Pse_x_xp(index_x_init, index_x_pos, F_ava_line):
+    dead_space = compute_dead_space(F_ava_line[index_x_init])
+
 def impact_ionization_rate_hole_van_overstraten_silicon(F_ava, gamma_temperature_dependence = 1.0):
     E_threshold = 0.0
     E_0 = 4.0e5
@@ -43,6 +65,14 @@ def impact_ionization_rate_hole_van_overstraten_silicon(F_ava, gamma_temperature
         b_h = 1.693e6
         imapact_ionization_h = gamma_temperature_dependence * a_h * exp(-gamma_temperature_dependence * b_h / F_ava)
     return imapact_ionization_h
+
+
+def dead_space_impact_ionization_rate_hole_van_overstraten_silicon(F_ava, x_start, x_position, dead_space, gamma_temperature_dependence = 1.0):
+    if x_position >= x_start + dead_space:
+        return local_to_dead_space_model(impact_ionization_rate_hole_van_overstraten_silicon(F_ava, gamma_temperature_dependence), dead_space)
+    else:
+        return 0.0    
+
 
 
 

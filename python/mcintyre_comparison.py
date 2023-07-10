@@ -11,10 +11,10 @@ from scipy.sparse.linalg import spsolve
 from timeit import default_timer as timer
 from scipy import interpolate
 
-import mcintyre_model
-import impact_ionization
-import electric_field_profile
-import mcintyre_newton
+    import mcintyre_model
+    import impact_ionization
+    import electric_field_profile
+    import mcintyre_newton
 
 
 import matplotlib.style
@@ -37,6 +37,8 @@ def main_comparison(nb_points, tolerance, plot=False):
     mesh_line = np.linspace(0.0, 1.8e-4, int(nb_points))
     electric_field = [
         electric_field_profile.function_electric_field(x) for x in mesh_line]
+    
+
 
     initial_guess = np.zeros(2 * len(mesh_line))
     x_max_ef = mesh_line[np.argmax(electric_field)]
